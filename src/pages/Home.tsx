@@ -2,17 +2,24 @@ import React, { useEffect, useState } from "react";
 import { MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
 import axios from "axios";
 
-type nation = "jpy" | "eur" | "usd";
+type nation = "jpy" | "eur" | "usd" | "twd";
 
 const currencyMap = {
   jpy: {
+    title: "jpy",
     label: "￥(엔)",
   },
   eur: {
+    title: "eur",
     label: "€(유로)",
   },
   usd: {
+    title: "usd",
     label: "＄(달러)",
+  },
+  twd: {
+    title: "twd",
+    label: "NT$(대만 달러)",
   },
 };
 
@@ -46,7 +53,7 @@ const Home = () => {
       .then((res) => {
         setCurrencyData(res.data);
       });
-  }, [value]);
+  }, [value, fromCurrency]);
 
   return (
     <Stack
@@ -77,9 +84,11 @@ const Home = () => {
             }}
             sx={{ width: "85px" }}
           >
-            <MenuItem value="jpy">JPY</MenuItem>
-            <MenuItem value="usd">USD</MenuItem>
-            <MenuItem value="eur">EUR</MenuItem>
+            {Object.values(currencyMap).map(({ title }: any) => {
+              const _title = title as string;
+
+              return <MenuItem value={title}>{_title.toUpperCase()}</MenuItem>;
+            })}
           </Select>
           <Select
             value={toCurrency}
@@ -99,7 +108,8 @@ const Home = () => {
         />
         <Stack gap={4} flexDirection={"column"} alignItems={"flex-start"}>
           <Typography variant="body2">{`환전 금액 : ${convertCurrency()}`}</Typography>
-          <Typography variant="body2">{`기준 날짜 : ${currencyData?.date} `}</Typography>
+          <Typography variant="body2">{`기준 환율 : ${currencyData?.[toCurrency]}`}</Typography>
+          <Typography variant="body2">{`기준 날짜 : ${currencyData?.date}`}</Typography>
         </Stack>
       </Stack>
     </Stack>
