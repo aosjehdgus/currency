@@ -95,6 +95,7 @@ const Home = () => {
     >
       <Stack
         zIndex={1}
+        width={"270px"}
         sx={{
           gap: 5,
           border: 1,
@@ -107,15 +108,21 @@ const Home = () => {
         }}
       >
         <Stack
-          direction={"row"}
+          direction={"column"}
           justifyContent={"space-between"}
           alignItems={"center"}
           gap={4}
         >
-          <Typography variant="h4" sx={{ fontWeight: 700, fontSize: "24px" }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, fontSize: "26px" }}>
             {"Currency Converter"}
           </Typography>
-          <Stack gap={2} direction={"column"} alignItems={"flex-start"}>
+          <Stack
+            gap={2}
+            direction={"column"}
+            width={"100%"}
+            alignItems={"center"}
+            justifyContent={"center"}
+          >
             <Stack direction={"row"} alignItems={"center"} gap={2}>
               <Typography
                 variant="body1"
@@ -144,7 +151,7 @@ const Home = () => {
                 color={"primary"}
                 sx={{
                   fontWeight: 700,
-                  fontSize: "14px",
+                  fontSize: "18px",
                 }}
               >
                 {`1 ${fromCurrency.toUpperCase()} = ${criteria} ${toCurrency.toUpperCase()}`}
