@@ -1,48 +1,66 @@
 import React, { useEffect, useState } from "react";
-import { MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
+import { MenuItem, Stack, TextField, Typography } from "@mui/material";
 import axios from "axios";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import koImg from "../images/ko.png";
+import jpImg from "../images/jp.png";
+import euImg from "../images/eu.png";
+import usImg from "../images/us.png";
+import twImg from "../images/tw.png";
 
-type nation = "jpy" | "eur" | "usd" | "twd";
+type Nation = "krw" | "jpy" | "eur" | "usd" | "twd";
 
-const currencyMap = {
+type Example = { title: string; label: string; img: any };
+
+type CurrencyMap = Record<Nation, Example>;
+
+const currencyMap: CurrencyMap = {
+  krw: {
+    title: "krw",
+    label: "원",
+    img: koImg,
+  },
   jpy: {
     title: "jpy",
     label: "￥(엔)",
+    img: jpImg,
   },
   eur: {
     title: "eur",
     label: "€(유로)",
+    img: euImg,
   },
   usd: {
     title: "usd",
     label: "＄(달러)",
+    img: usImg,
   },
   twd: {
     title: "twd",
     label: "NT$(대만 달러)",
+    img: twImg,
   },
 };
 
 const Home = () => {
-  const [fromCurrency, setFromCurrency] = useState<nation>("jpy");
-  const [toCurrency, setToCurrency] = useState<string>("krw");
+  const [fromValue, setFromValue] = useState<number>(0);
+  const [toValue, setToValue] = useState<number>(0);
+
+  const [criteria, setCriteria] = useState<number>(0);
+
+  const [fromCurrency, setFromCurrency] = useState<Nation>("jpy");
+  const [toCurrency, setToCurrency] = useState<Nation>("krw");
   const [currencyData, setCurrencyData] = useState<{
     date: any;
     [key: string]: number;
   }>();
 
-  const [value, setValue] = useState<number>(0);
+  const handleFromValue = (e: any) => {
+    const val = parseInt(e.target.value);
 
-  const convertCurrency = () => {
-    if (!currencyData) return;
+    if (isNaN(val)) return setFromValue(0);
 
-    return `${(value * currencyData[toCurrency]).toFixed(2)} 원`;
-  };
-
-  const handleChange = (e: any) => {
-    const val = e.target.value;
-
-    setValue(val);
+    setFromValue(val);
   };
 
   useEffect(() => {
@@ -53,7 +71,20 @@ const Home = () => {
       .then((res) => {
         setCurrencyData(res.data);
       });
-  }, [value, fromCurrency]);
+  }, [fromValue, toValue, fromCurrency, toCurrency]);
+
+  useEffect(() => {
+    if (!currencyData) return;
+
+    const currency = currencyData[toCurrency];
+
+    setCriteria(parseFloat(currency?.toFixed(2)));
+    setToValue(
+      currency
+        ? parseFloat((fromValue * parseFloat(currency.toFixed(2))).toFixed(2))
+        : 0
+    );
+  }, [fromValue, currencyData]);
 
   return (
     <Stack
@@ -63,53 +94,134 @@ const Home = () => {
       justifyContent={"center"}
     >
       <Stack
-        gap={5}
-        border={1}
-        borderRadius={2}
-        p={4}
-        borderColor={"#d3d3d3"}
-        sx={{ boxShadow: "0 8px 15px -4px rgba(0, 0, 0, 0.6)" }}
+        zIndex={1}
+        sx={{
+          gap: 5,
+          border: 1,
+          borderRadius: 2,
+          padding: 4,
+          borderColor: "#d3d3d3",
+          background: "rgba(0, 0, 0, 0.01)",
+          boxShadow:
+            "inset -3px -3px 5px rgba(0, 0, 0, 0.03), inset 3px 3px 5px rgba(0, 0, 0, 0.03)",
+        }}
       >
-        <Typography variant="h5">{"Currency Converter"}</Typography>
         <Stack
           direction={"row"}
+          justifyContent={"space-between"}
           alignItems={"center"}
-          justifyContent={"space-around"}
+          gap={4}
         >
-          <Select
-            value={fromCurrency}
-            onChange={(e: any) => {
-              setFromCurrency(e.target.value);
-              setValue(0);
-            }}
-            sx={{ width: "85px" }}
-          >
-            {Object.values(currencyMap).map(({ title }: any) => {
-              const _title = title as string;
-
-              return <MenuItem value={title}>{_title.toUpperCase()}</MenuItem>;
-            })}
-          </Select>
-          <Select
-            value={toCurrency}
-            onChange={(e: any) => setToCurrency(e.target.value)}
-            inputProps={{ readOnly: true }}
-            sx={{ width: "85px" }}
-          >
-            <MenuItem value="krw">KRW</MenuItem>
-          </Select>
+          <Typography variant="h4" sx={{ fontWeight: 700, fontSize: "24px" }}>
+            {"Currency Converter"}
+          </Typography>
+          <Stack gap={2} direction={"column"} alignItems={"flex-start"}>
+            <Stack direction={"row"} alignItems={"center"} gap={2}>
+              <Typography
+                variant="body1"
+                sx={{
+                  fontWeight: 700,
+                  color: "rgba(0, 0, 0, 0.9)",
+                  fontSize: "14px",
+                }}
+              >
+                기준 날짜
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{
+                  fontWeight: 300,
+                  color: "rgba(0, 0, 0, 0.9)",
+                  fontSize: "14px",
+                }}
+              >
+                {currencyData?.date}
+              </Typography>
+            </Stack>
+            <Stack direction={"row"} alignItems={"center"} gap={2}>
+              <Typography
+                variant="body1"
+                color={"primary"}
+                sx={{
+                  fontWeight: 700,
+                  fontSize: "14px",
+                }}
+              >
+                {`1 ${fromCurrency.toUpperCase()} = ${criteria} ${toCurrency.toUpperCase()}`}
+              </Typography>
+            </Stack>
+          </Stack>
         </Stack>
-        <TextField
-          label={currencyMap[fromCurrency]?.label}
-          variant="standard"
-          type="number"
-          value={value}
-          onChange={handleChange}
-        />
-        <Stack gap={4} flexDirection={"column"} alignItems={"flex-start"}>
-          <Typography variant="body2">{`환전 금액 : ${convertCurrency()}`}</Typography>
-          <Typography variant="body2">{`기준 환율 : ${currencyData?.[toCurrency]}`}</Typography>
-          <Typography variant="body2">{`기준 날짜 : ${currencyData?.date}`}</Typography>
+
+        <Stack
+          direction={"column"}
+          alignItems={"center"}
+          gap={2}
+          justifyContent={"space-between"}
+        >
+          <TextField
+            fullWidth
+            value={fromValue}
+            onChange={handleFromValue}
+            InputProps={{
+              endAdornment: (
+                <TextField
+                  sx={{ width: "145px" }}
+                  select
+                  variant="standard"
+                  value={fromCurrency}
+                  onChange={(e: any) => {
+                    setFromCurrency(e.target.value);
+                    setFromValue(0);
+                    setToValue(0);
+                  }}
+                >
+                  {Object.values(currencyMap).map(({ title, img }: Example) => {
+                    return (
+                      <MenuItem value={title}>
+                        <Stack flexDirection={"row"} gap={1}>
+                          <img src={img} width={24} />
+                          <Typography>{title.toUpperCase()}</Typography>
+                        </Stack>
+                      </MenuItem>
+                    );
+                  })}
+                </TextField>
+              ),
+            }}
+          />
+          <ArrowDownwardIcon color="action" />
+
+          <TextField
+            fullWidth
+            value={toValue}
+            InputProps={{
+              endAdornment: (
+                <TextField
+                  sx={{ width: "145px" }}
+                  select
+                  variant="standard"
+                  value={toCurrency}
+                  onChange={(e: any) => {
+                    setToCurrency(e.target.value);
+                    setFromValue(0);
+                    setToValue(0);
+                  }}
+                >
+                  {Object.values(currencyMap).map(({ title, img }: Example) => {
+                    return (
+                      <MenuItem value={title}>
+                        <Stack flexDirection={"row"} gap={1}>
+                          <img src={img} width={24} />
+                          <Typography>{title.toUpperCase()}</Typography>
+                        </Stack>
+                      </MenuItem>
+                    );
+                  })}
+                </TextField>
+              ),
+            }}
+          />
         </Stack>
       </Stack>
     </Stack>
