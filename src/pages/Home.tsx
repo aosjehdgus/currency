@@ -19,6 +19,7 @@ const Home = () => {
       alignItems={"center"}
       justifyContent={"center"}
     >
+      {"Test"}
       <Stack gap={4}>
         <TextField
           label="엔"
