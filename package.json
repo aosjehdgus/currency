@@ -29,7 +29,7 @@
     "eject": "react-scripts eject",
     "deploy": "gh-pages -d build"
   },
-  "homepage": "https://aosjehdgus.github.io/currency/",
+  "homepage": "https://aosjehdgus.github.io/currency",
   "eslintConfig": {
     "extends": [
       "react-app",
