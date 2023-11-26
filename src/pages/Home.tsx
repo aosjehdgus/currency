@@ -6,7 +6,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import ImportExportIcon from "@mui/icons-material/ImportExport";
 import HighlightOffRoundedIcon from "@mui/icons-material/HighlightOffRounded";
 import koImg from "../images/ko.png";
@@ -14,6 +14,7 @@ import jpImg from "../images/jp.png";
 import euImg from "../images/eu.png";
 import usImg from "../images/us.png";
 import twImg from "../images/tw.png";
+import dayjs from "dayjs";
 
 type Nation = "krw" | "jpy" | "eur" | "usd" | "twd";
 
@@ -63,6 +64,10 @@ const Home = () => {
 
   const [isFirstField, setIsFirstField] = useState<boolean | null>(true);
 
+  const today = dayjs().format("YYYY-MM-DD");
+
+  const [date, setDate] = useState<string>(today);
+
   const handleFromValue = (e: any) => {
     setIsFirstField(true);
 
@@ -83,25 +88,38 @@ const Home = () => {
     setToValue(val);
   };
 
+  const initValue = () => {
+    setFromValue(0);
+    setToValue(0);
+  };
+
   useEffect(() => {
     const url = isFirstField
-      ? `https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/${fromCurrency}/${toCurrency}.min.json`
-      : `https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/${toCurrency}/${fromCurrency}.min.json`;
+      ? `https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/${date}/currencies/${fromCurrency}/${toCurrency}.min.json`
+      : `https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/${date}/currencies/${toCurrency}/${fromCurrency}.min.json`;
 
-    axios.get(url).then((res) => {
-      const currency = parseFloat(
-        res.data[isFirstField ? toCurrency : fromCurrency]?.toFixed(6)
-      );
+    axios
+      .get(url)
+      .then((res) => {
+        const currency = parseFloat(
+          res.data[isFirstField ? toCurrency : fromCurrency]?.toFixed(6)
+        );
 
-      if (isFirstField) {
-        setToValue(parseFloat((fromValue * currency).toFixed(6)));
-      } else {
-        setFromValue(parseFloat((toValue * currency).toFixed(6)));
-      }
+        if (isFirstField) {
+          setToValue(parseFloat((fromValue * currency).toFixed(6)));
+        } else {
+          setFromValue(parseFloat((toValue * currency).toFixed(6)));
+        }
 
-      setCurrency({ value: currency, date: res.data.date });
-    });
-  }, [isFirstField, fromValue, toValue, fromCurrency, toCurrency]);
+        setCurrency({ value: currency, date: res.data.date });
+      })
+      .catch((err: AxiosError) => {
+        if (err.response?.status === 404) {
+          setDate("latest");
+        }
+        console.error(err);
+      });
+  }, [date, isFirstField, fromValue, toValue, fromCurrency, toCurrency]);
 
   return (
     <Stack
@@ -140,7 +158,7 @@ const Home = () => {
             alignItems={"center"}
             justifyContent={"center"}
           >
-            <Stack direction={"row"} alignItems={"center"} gap={2}>
+            <Stack direction={"column"} alignItems={"center"} gap={2}>
               <Typography
                 variant="body1"
                 color={"primary"}
@@ -178,7 +196,9 @@ const Home = () => {
                     <IconButton
                       size="small"
                       sx={{ opacity: 0.5 }}
-                      onClick={() => setFromValue(0)}
+                      onClick={() => {
+                        initValue();
+                      }}
                     >
                       <HighlightOffRoundedIcon />
                     </IconButton>
@@ -190,11 +210,9 @@ const Home = () => {
                     variant="standard"
                     value={fromCurrency}
                     onChange={(e: any) => {
-                      setFromCurrency(e.target.value);
-                      setFromValue(0);
-                      setToValue(0);
-
                       setIsFirstField(true);
+                      setFromCurrency(e.target.value);
+                      initValue();
                     }}
                   >
                     {Object.values(currencyMap).map(
@@ -232,7 +250,9 @@ const Home = () => {
                     <IconButton
                       size="small"
                       sx={{ opacity: 0.5 }}
-                      onClick={() => setToValue(0)}
+                      onClick={() => {
+                        initValue();
+                      }}
                     >
                       <HighlightOffRoundedIcon />
                     </IconButton>
@@ -243,10 +263,9 @@ const Home = () => {
                     variant="standard"
                     value={toCurrency}
                     onChange={(e: any) => {
-                      setToCurrency(e.target.value);
-                      setFromValue(0);
-                      setToValue(0);
                       setIsFirstField(false);
+                      setToCurrency(e.target.value);
+                      initValue();
                     }}
                   >
                     {Object.values(currencyMap).map(
@@ -254,8 +273,8 @@ const Home = () => {
                         return (
                           <MenuItem value={title} key={title}>
                             <Stack
-                              flexDirection={"row"}
                               gap={1}
+                              flexDirection={"row"}
                               alignItems={"center"}
                             >
                               <img src={img} width={16} height={16} />

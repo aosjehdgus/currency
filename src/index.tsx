@@ -23,7 +23,19 @@ declare module "@mui/material/styles" {
 
 const theme = createTheme({
   typography: {
-    fontFamily: "Noto Sans KR",
+    fontFamily: [
+      "sans-serif",
+      "Roboto",
+      '"Helvetica Neue"',
+      '"Segoe UI Emoji"',
+      '"Segoe UI Symbol"',
+
+      "-apple-system",
+      "BlinkMacSystemFont",
+      '"Segoe UI"',
+
+      "Arial",
+    ].join(","),
   },
   status: {
     danger: orange[500],
