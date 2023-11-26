@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { MenuItem, Stack, TextField, Typography } from "@mui/material";
+import {
+  IconButton,
+  MenuItem,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 import axios from "axios";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import ImportExportIcon from "@mui/icons-material/ImportExport";
+import HighlightOffRoundedIcon from "@mui/icons-material/HighlightOffRounded";
 import koImg from "../images/ko.png";
 import jpImg from "../images/jp.png";
 import euImg from "../images/eu.png";
@@ -46,16 +53,19 @@ const Home = () => {
   const [fromValue, setFromValue] = useState<number>(0);
   const [toValue, setToValue] = useState<number>(0);
 
-  const [criteria, setCriteria] = useState<number>(0);
+  const [currency, setCurrency] = useState<{ value: number; date: string }>({
+    value: 0,
+    date: "",
+  });
 
   const [fromCurrency, setFromCurrency] = useState<Nation>("jpy");
   const [toCurrency, setToCurrency] = useState<Nation>("krw");
-  const [currencyData, setCurrencyData] = useState<{
-    date: any;
-    [key: string]: number;
-  }>();
+
+  const [isFirstField, setIsFirstField] = useState<boolean | null>(true);
 
   const handleFromValue = (e: any) => {
+    setIsFirstField(true);
+
     const val = parseInt(e.target.value);
 
     if (isNaN(val)) return setFromValue(0);
@@ -63,28 +73,35 @@ const Home = () => {
     setFromValue(val);
   };
 
-  useEffect(() => {
-    axios
-      .get(
-        `https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/${fromCurrency}/${toCurrency}.min.json`
-      )
-      .then((res) => {
-        setCurrencyData(res.data);
-      });
-  }, [fromValue, toValue, fromCurrency, toCurrency]);
+  const handleToValue = (e: any) => {
+    setIsFirstField(false);
+
+    const val = parseInt(e.target.value);
+
+    if (isNaN(val)) return setToValue(0);
+
+    setToValue(val);
+  };
 
   useEffect(() => {
-    if (!currencyData) return;
+    const url = isFirstField
+      ? `https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/${fromCurrency}/${toCurrency}.min.json`
+      : `https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/${toCurrency}/${fromCurrency}.min.json`;
 
-    const currency = currencyData[toCurrency];
+    axios.get(url).then((res) => {
+      const currency = parseFloat(
+        res.data[isFirstField ? toCurrency : fromCurrency]?.toFixed(6)
+      );
 
-    setCriteria(parseFloat(currency?.toFixed(2)));
-    setToValue(
-      currency
-        ? parseFloat((fromValue * parseFloat(currency.toFixed(2))).toFixed(2))
-        : 0
-    );
-  }, [fromValue, currencyData]);
+      if (isFirstField) {
+        setToValue(parseFloat((fromValue * currency).toFixed(6)));
+      } else {
+        setFromValue(parseFloat((toValue * currency).toFixed(6)));
+      }
+
+      setCurrency({ value: currency, date: res.data.date });
+    });
+  }, [isFirstField, fromValue, toValue, fromCurrency, toCurrency]);
 
   return (
     <Stack
@@ -97,7 +114,7 @@ const Home = () => {
         zIndex={1}
         width={"270px"}
         sx={{
-          gap: 5,
+          gap: 3,
           border: 1,
           borderRadius: 2,
           padding: 4,
@@ -111,7 +128,7 @@ const Home = () => {
           direction={"column"}
           justifyContent={"space-between"}
           alignItems={"center"}
-          gap={4}
+          gap={3}
         >
           <Typography variant="h4" sx={{ fontWeight: 700, fontSize: "26px" }}>
             {"Currency Converter"}
@@ -126,35 +143,19 @@ const Home = () => {
             <Stack direction={"row"} alignItems={"center"} gap={2}>
               <Typography
                 variant="body1"
-                sx={{
-                  fontWeight: 700,
-                  color: "rgba(0, 0, 0, 0.9)",
-                  fontSize: "14px",
-                }}
-              >
-                기준 날짜
-              </Typography>
-              <Typography
-                variant="body1"
-                sx={{
-                  fontWeight: 300,
-                  color: "rgba(0, 0, 0, 0.9)",
-                  fontSize: "14px",
-                }}
-              >
-                {currencyData?.date}
-              </Typography>
-            </Stack>
-            <Stack direction={"row"} alignItems={"center"} gap={2}>
-              <Typography
-                variant="body1"
                 color={"primary"}
                 sx={{
                   fontWeight: 700,
                   fontSize: "18px",
                 }}
               >
-                {`1 ${fromCurrency.toUpperCase()} = ${criteria} ${toCurrency.toUpperCase()}`}
+                {`1 ${(isFirstField
+                  ? fromCurrency
+                  : toCurrency
+                ).toUpperCase()} = ${currency?.value} ${(isFirstField
+                  ? toCurrency
+                  : fromCurrency
+                ).toUpperCase()}`}
               </Typography>
             </Stack>
           </Stack>
@@ -163,7 +164,7 @@ const Home = () => {
         <Stack
           direction={"column"}
           alignItems={"center"}
-          gap={2}
+          gap={1}
           justifyContent={"space-between"}
         >
           <TextField
@@ -172,63 +173,131 @@ const Home = () => {
             onChange={handleFromValue}
             InputProps={{
               endAdornment: (
-                <TextField
-                  sx={{ width: "145px" }}
-                  select
-                  variant="standard"
-                  value={fromCurrency}
-                  onChange={(e: any) => {
-                    setFromCurrency(e.target.value);
-                    setFromValue(0);
-                    setToValue(0);
-                  }}
-                >
-                  {Object.values(currencyMap).map(({ title, img }: Example) => {
-                    return (
-                      <MenuItem value={title}>
-                        <Stack flexDirection={"row"} gap={1}>
-                          <img src={img} width={24} />
-                          <Typography>{title.toUpperCase()}</Typography>
-                        </Stack>
-                      </MenuItem>
-                    );
-                  })}
-                </TextField>
+                <Stack gap={0.5} direction={"row"} alignItems={"center"}>
+                  {fromValue !== 0 && (
+                    <IconButton
+                      size="small"
+                      sx={{ opacity: 0.5 }}
+                      onClick={() => setFromValue(0)}
+                    >
+                      <HighlightOffRoundedIcon />
+                    </IconButton>
+                  )}
+
+                  <TextField
+                    sx={{ minWidth: "80px" }}
+                    select
+                    variant="standard"
+                    value={fromCurrency}
+                    onChange={(e: any) => {
+                      setFromCurrency(e.target.value);
+                      setFromValue(0);
+                      setToValue(0);
+
+                      setIsFirstField(true);
+                    }}
+                  >
+                    {Object.values(currencyMap).map(
+                      ({ title, img }: Example) => {
+                        return (
+                          <MenuItem value={title} key={title}>
+                            <Stack
+                              flexDirection={"row"}
+                              gap={1}
+                              alignItems={"center"}
+                            >
+                              <img src={img} width={16} height={16} />
+                              <Typography>{title.toUpperCase()}</Typography>
+                            </Stack>
+                          </MenuItem>
+                        );
+                      }
+                    )}
+                  </TextField>
+                </Stack>
               ),
             }}
           />
-          <ArrowDownwardIcon color="action" />
+
+          <ImportExportIcon color="action" />
 
           <TextField
             fullWidth
             value={toValue}
+            onChange={handleToValue}
             InputProps={{
               endAdornment: (
-                <TextField
-                  sx={{ width: "145px" }}
-                  select
-                  variant="standard"
-                  value={toCurrency}
-                  onChange={(e: any) => {
-                    setToCurrency(e.target.value);
-                    setFromValue(0);
-                    setToValue(0);
-                  }}
-                >
-                  {Object.values(currencyMap).map(({ title, img }: Example) => {
-                    return (
-                      <MenuItem value={title}>
-                        <Stack flexDirection={"row"} gap={1}>
-                          <img src={img} width={24} />
-                          <Typography>{title.toUpperCase()}</Typography>
-                        </Stack>
-                      </MenuItem>
-                    );
-                  })}
-                </TextField>
+                <Stack gap={0.5} direction={"row"} alignItems={"center"}>
+                  {fromValue !== 0 && (
+                    <IconButton
+                      size="small"
+                      sx={{ opacity: 0.5 }}
+                      onClick={() => setToValue(0)}
+                    >
+                      <HighlightOffRoundedIcon />
+                    </IconButton>
+                  )}
+                  <TextField
+                    sx={{ minWidth: "80px" }}
+                    select
+                    variant="standard"
+                    value={toCurrency}
+                    onChange={(e: any) => {
+                      setToCurrency(e.target.value);
+                      setFromValue(0);
+                      setToValue(0);
+                      setIsFirstField(false);
+                    }}
+                  >
+                    {Object.values(currencyMap).map(
+                      ({ title, img }: Example) => {
+                        return (
+                          <MenuItem value={title} key={title}>
+                            <Stack
+                              flexDirection={"row"}
+                              gap={1}
+                              alignItems={"center"}
+                            >
+                              <img src={img} width={16} height={16} />
+                              <Typography>{title.toUpperCase()}</Typography>
+                            </Stack>
+                          </MenuItem>
+                        );
+                      }
+                    )}
+                  </TextField>
+                </Stack>
               ),
             }}
           />
+        </Stack>
+        <Stack
+          width={"100%"}
+          direction={"row"}
+          alignItems={"center"}
+          justifyContent={"flex-end"}
+          gap={2}
+        >
+          <Typography
+            variant="body1"
+            sx={{
+              fontWeight: 700,
+              color: "rgba(0, 0, 0, 0.9)",
+              fontSize: "14px",
+            }}
+          >
+            기준 날짜
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              fontWeight: 500,
+              color: "rgba(0, 0, 0, 0.9)",
+              fontSize: "14px",
+            }}
+          >
+            {currency?.date}
+          </Typography>
         </Stack>
       </Stack>
     </Stack>
